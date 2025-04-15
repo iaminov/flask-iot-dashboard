@@ -1,1 +1,13 @@
-{}
+{
+  "temp_01": {
+    "sensor_id": "temp_01",
+    "min_value": 23.5,
+    "max_value": 26.0,
+    "avg_value": 24.5,
+    "count": 5,
+    "last_reading": "2024-01-01T12:00:00",
+    "sensor_type": "",
+    "unit": "",
+    "location": null
+  }
+}

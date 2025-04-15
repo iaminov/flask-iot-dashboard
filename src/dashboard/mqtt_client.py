@@ -1,11 +1,13 @@
-import paho.mqtt.client as mqtt
-import os
-import logging
-from typing import Callable
-from .tasks import process_sensor_data
 import json
+import logging
+import os
+
+import paho.mqtt.client as mqtt
+
+from .tasks import process_sensor_data
 
 logger = logging.getLogger(__name__)
+
 
 class FileStorage:
     def __init__(self, filepath="data.json"):
@@ -15,17 +17,19 @@ class FileStorage:
     def _load_data(self):
         """Load data from the JSON file."""
         if os.path.exists(self.filepath):
-            with open(self.filepath, 'r') as f:
+            with open(self.filepath, "r") as f:
                 try:
                     return json.load(f)
                 except json.JSONDecodeError:
-                    logger.error(f"Error decoding JSON from {self.filepath}. Starting with empty data.")
+                    logger.error(
+                        f"Error decoding JSON from {self.filepath}. Starting with empty data."
+                    )
                     return {}
         return {}
 
     def _save_data(self):
         """Save data to the JSON file."""
-        with open(self.filepath, 'w') as f:
+        with open(self.filepath, "w") as f:
             json.dump(self.data, f, indent=4)
 
     def get(self, key, default=None):
@@ -43,15 +47,16 @@ class FileStorage:
             del self.data[key]
             self._save_data()
 
+
 class MQTTClient:
     def __init__(self):
         self.client = mqtt.Client()
-        self.broker_host = os.getenv('MQTT_BROKER_HOST', 'localhost')
-        self.broker_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
-        self.username = os.getenv('MQTT_USERNAME')
-        self.password = os.getenv('MQTT_PASSWORD')
-        self.topics = os.getenv('MQTT_TOPICS', 'sensors/+/+').split(',')
-        self.storage = FileStorage("mqtt_state.json") # Using file storage
+        self.broker_host = os.getenv("MQTT_BROKER_HOST", "localhost")
+        self.broker_port = int(os.getenv("MQTT_BROKER_PORT", 1883))
+        self.username = os.getenv("MQTT_USERNAME")
+        self.password = os.getenv("MQTT_PASSWORD")
+        self.topics = os.getenv("MQTT_TOPICS", "sensors/+/+").split(",")
+        self.storage = FileStorage("mqtt_state.json")  # Using file storage
 
         self._setup_client()
 
@@ -68,7 +73,9 @@ class MQTTClient:
     def _on_connect(self, client, userdata, flags, rc):
         """Handle successful MQTT connection."""
         if rc == 0:
-            logger.info(f"Connected to MQTT broker at {self.broker_host}:{self.broker_port}")
+            logger.info(
+                f"Connected to MQTT broker at {self.broker_host}:{self.broker_port}"
+            )
             for topic in self.topics:
                 client.subscribe(topic.strip())
                 logger.info(f"Subscribed to topic: {topic.strip()}")
@@ -78,12 +85,12 @@ class MQTTClient:
     def _on_message(self, client, userdata, msg):
         """Process incoming MQTT messages."""
         try:
-            # Process sensor data directly (no Celery)
-            from .tasks import process_sensor_data
-            process_sensor_data(msg.topic, msg.payload.decode('utf-8'))
-
+            payload = msg.payload.decode("utf-8")
+            if hasattr(process_sensor_data, "delay"):
+                process_sensor_data.delay(msg.topic, payload)
+            else:
+                process_sensor_data(msg.topic, payload)
             logger.info(f"Processed sensor data for topic: {msg.topic}")
-
         except Exception as e:
             logger.error(f"Error processing MQTT message: {e}")
 

@@ -5,3 +5,17 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 requires-python = ">=3.11"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "isort>=5.13.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88
