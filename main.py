@@ -2,6 +2,7 @@
 import os
 import logging
 import threading
+import subprocess
 from src.dashboard import create_app, socketio
 from src.dashboard.mqtt_client import MQTTClient
 
