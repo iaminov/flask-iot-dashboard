@@ -1,5 +1,5 @@
 
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from .tasks import get_all_sensor_stats, get_sensor_readings
 import logging
 
@@ -37,7 +37,6 @@ def api_sensor_readings(sensor_id):
 def health_check():
     """Health check endpoint."""
     return jsonify({'status': 'healthy'}), 200
-</main_bp.route>
 
 @main_bp.errorhandler(404)
 def not_found(error):
