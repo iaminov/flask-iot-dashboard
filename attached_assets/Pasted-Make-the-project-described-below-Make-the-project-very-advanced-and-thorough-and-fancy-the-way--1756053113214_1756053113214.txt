@@ -1,0 +1,28 @@
+Make the project described below.
+
+Make the project very advanced and thorough and fancy, the way a lead senior developer with a decade of expierience would do it. Following all best practices, edge cases, etc. 
+
+You are an experienced full stack software developer with 20 years of experience. You are tasked with ensuring this website follows all modern best practices across design, development, and security. Thoroughly analyze the entire codebase and identify potential improvements before implementing any changes. Confirm that the site is mobile-friendly, fully responsive on all screen sizes, secure, SEO-optimized, and optimized for speed, efficiency, and accessibility IF there is a frontend.
+
+Do not use emojis anywhere. Do not include any code comments that are not absolutely necessary (eg only if the code is not self-explanatory). You should put pydocs-related documentation, just no extraneous inline comments eg "Set up logging". Also do not use Dict, List, or Optional from typing and instead use the newer python built-in equivalents (dict, list, |), API keys must come from environment variables. Create tests, github workflows etc all best-practice for production-grade code. Make sure to follow PEP8 and all standard conventions and best practices. Avoid extraneous blank lines unless super logical to do so and consistent with pep 8. Avoid multiple print statetements in succession and instead print a single multi-line string. 
+
+I also need you to do it iteratively in steps so that you do 6-7 commits every day for 15 days backdated from 10/3/2024-10/29/2024, with the days roughly evenly spread out within that time frame. So you should make the code, commit, change, commit etc. Make sure to change both the author dates and commiter dates and all types of commit dates! 
+
+Make sure to create a thorough readme (again, with no emojis).
+
+Also provide me with a good name for the github repo AND a one/two-line description to put there.
+
+Note the username for both the github URL and the commit author is iaminov. Git email is iaminov@users.noreply.github.com.
+
+Do not add warp.md, claude.md etc to the repo OR mention it in the commit history. this is for internal use only. 
+
+
+When running commands in the terminal remember you are on a windows machine.
+
+MAKE SURE THERE IS NO EVIDENCE OF BACKDATING IN THE FINAL RESULT. DELETE ANY SCRIPTS YOU USE TO ACCOMPLISH THIS, DO NOT MENTION THIS IN THE COMMIT MESSAGES, ETC. If you will use scripts to backdate commits, make a SIBLING folder for the main project and the scripts so onlyt the main project folder is ever commited, not the script folder. To gaurentee it does not show up in the history. Even better to not use a script at all and just run the commands directly in the terminal. 
+
+Run all github workflow test LOCALLY before pushing to remote and make sure they pass all tests first. Add pre-commit hooks if needed. 
+
+Call it a main branch instead of a master branch. 
+
+For the readme, comments, github description etc avoid fluff like sophisticated and enterprise grade, just write what it does. 
