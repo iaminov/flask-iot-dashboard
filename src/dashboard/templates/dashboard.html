@@ -4,379 +4,823 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Dashboard</title>
+    <title>IoT Sensor Dashboard | Real-time Monitoring</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --surface-hover: #f1f5f9;
+            --border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 0.5rem;
+            --radius-lg: 0.75rem;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
         }
-        
+
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: var(--spacing-lg) 0;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            pointer-events: none;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
         .header h1 {
             font-size: 2rem;
-            font-weight: 300;
-        }
-        
-        .status {
-            display: inline-flex;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
+            gap: var(--spacing-md);
         }
-        
+
+        .header h1 i {
+            font-size: 2.5rem;
+            opacity: 0.9;
+        }
+
+        .status-panel {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
         .status-indicator {
-            width: 12px;
-            height: 12px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background-color: #ff4444;
+            background: var(--danger-color);
+            animation: pulse 2s infinite;
         }
-        
+
         .status-indicator.connected {
-            background-color: #44ff44;
+            background: var(--success-color);
         }
-        
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .timestamp {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        /* Container */
         .container {
             max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+            margin: 0 auto;
+            padding: var(--spacing-2xl) var(--spacing-lg);
         }
-        
+
+        /* Stats Grid */
+        .stats-section {
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: var(--spacing-xs);
+        }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-2xl);
         }
-        
+
         .stat-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
-        
+
         .stat-card:hover {
-            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
         }
-        
-        .stat-card h3 {
-            color: #667eea;
-            font-size: 0.9rem;
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
         }
-        
+
         .stat-value {
             font-size: 2rem;
-            font-weight: 600;
-            color: #333;
-            line-height: 1;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: var(--spacing-sm) 0;
         }
-        
+
         .stat-unit {
-            font-size: 0.9rem;
-            color: #666;
-            margin-left: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-left: var(--spacing-xs);
         }
-        
+
         .stat-meta {
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border);
         }
-        
+
+        .stat-location {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .stat-timestamp {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .stat-range {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-sm);
+        }
+
+        .stat-range-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--spacing-sm);
+            background: var(--background);
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+        }
+
+        .stat-range-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-range-label {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Charts Section */
         .charts-section {
-            background: white;
-            border-radius: 8px;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
         }
-        
+
         .chart-controls {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: var(--spacing-md);
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
             flex-wrap: wrap;
         }
-        
-        .chart-controls select, .chart-controls button {
-            padding: 0.5rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            font-size: 0.9rem;
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
         }
-        
-        .chart-controls button {
-            background: #667eea;
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-select, .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            background: var(--surface);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            background: var(--primary-color);
             color: white;
-            border-color: #667eea;
+            border-color: var(--primary-color);
+            font-weight: 500;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
         }
-        
-        .chart-controls button:hover {
-            background: #5a6fd8;
+
+        .btn:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
         }
-        
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .chart-container {
             position: relative;
             height: 400px;
-            margin-top: 1rem;
+            margin-top: var(--spacing-lg);
         }
-        
+
+        /* Loading States */
         .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-secondary);
         }
-        
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: var(--spacing-md);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error States */
         .error {
-            background: #fee;
-            border: 1px solid #fcc;
-            color: #c66;
-            padding: 1rem;
-            border-radius: 4px;
-            margin: 1rem 0;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: var(--spacing-md);
+            border-radius: var(--radius);
+            margin: var(--spacing-md) 0;
         }
-        
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .header {
-                padding: 1rem;
+            .header-content {
+                flex-direction: column;
+                gap: var(--spacing-md);
             }
-            
+
             .header h1 {
                 font-size: 1.5rem;
             }
-            
-            .container {
-                margin: 1rem auto;
+
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
-            
-            .charts-section {
-                padding: 1rem;
-            }
-            
+
             .chart-controls {
                 flex-direction: column;
+                align-items: stretch;
             }
-            
-            .chart-container {
-                height: 300px;
+
+            .container {
+                padding: var(--spacing-lg) var(--spacing-md);
             }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--background);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>IoT Sensor Dashboard</h1>
-        <div class="status">
-            <div class="status-indicator" id="connectionStatus"></div>
-            <span id="connectionText">Disconnected</span>
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-satellite-dish"></i>
+                IoT Sensor Dashboard
+            </h1>
+            <div class="status-panel">
+                <div class="status-item">
+                    <div class="status-indicator" id="connectionStatus"></div>
+                    <span id="connectionText">Disconnected</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-database"></i>
+                    <span id="sensorCount">0 Sensors</span>
+                </div>
+                <div class="timestamp" id="lastUpdate">
+                    Never updated
+                </div>
+            </div>
         </div>
     </div>
     
     <div class="container">
-        <div class="stats-grid" id="statsGrid">
-            <div class="loading">Loading sensor data...</div>
+        <div class="stats-section">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Sensor Overview
+                    </h2>
+                    <p class="section-subtitle">Real-time monitoring of all connected IoT sensors</p>
+                </div>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading sensor data...</p>
+                </div>
+            </div>
         </div>
         
         <div class="charts-section">
-            <h2>Real-time Sensor Data</h2>
-            <div class="chart-controls">
-                <select id="sensorSelect">
-                    <option value="">Select a sensor...</option>
-                </select>
-                <select id="timeRange">
-                    <option value="1">Last 1 hour</option>
-                    <option value="6">Last 6 hours</option>
-                    <option value="24" selected>Last 24 hours</option>
-                    <option value="168">Last 7 days</option>
-                </select>
-                <button onclick="loadChart()">Load Chart</button>
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-area"></i>
+                        Historical Data Analysis
+                    </h2>
+                    <p class="section-subtitle">Detailed sensor readings with trend analysis</p>
+                </div>
             </div>
+            
+            <div class="chart-controls">
+                <div class="form-group">
+                    <label class="form-label" for="sensorSelect">Sensor</label>
+                    <select id="sensorSelect" class="form-select">
+                        <option value="">Select a sensor...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="timeRange">Time Range</label>
+                    <select id="timeRange" class="form-select">
+                        <option value="1">Last 1 hour</option>
+                        <option value="6">Last 6 hours</option>
+                        <option value="24" selected>Last 24 hours</option>
+                        <option value="168">Last 7 days</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn" onclick="loadChart()">
+                        <i class="fas fa-sync-alt"></i>
+                        Load Chart
+                    </button>
+                </div>
+            </div>
+            
             <div class="chart-container">
                 <canvas id="sensorChart"></canvas>
             </div>
         </div>
     </div>
-    
+
     <script>
-        const socket = io();
-        let currentChart = null;
-        let sensorStats = {};
-        
-        socket.on('connect', function() {
-            document.getElementById('connectionStatus').classList.add('connected');
-            document.getElementById('connectionText').textContent = 'Connected';
-            loadSensorStats();
-        });
-        
-        socket.on('disconnect', function() {
-            document.getElementById('connectionStatus').classList.remove('connected');
-            document.getElementById('connectionText').textContent = 'Disconnected';
-        });
-        
-        socket.on('sensor_update', function(data) {
-            updateSensorDisplay(data);
-            if (currentChart && data.sensor_id === document.getElementById('sensorSelect').value) {
-                addPointToChart(data);
-            }
-        });
-        
-        socket.on('sensor_stats', function(data) {
-            displaySensorStats(data.stats);
-        });
-        
-        socket.on('sensor_history', function(data) {
-            displayChart(data.sensor_id, data.readings);
-        });
-        
-        function loadSensorStats() {
-            socket.emit('request_all_stats');
+        let socket;
+        let chart;
+        let sensors = {};
+        let isConnected = false;
+
+        // Initialize WebSocket connection
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', function() {
+                console.log('Connected to server');
+                isConnected = true;
+                updateConnectionStatus();
+                requestAllStats();
+            });
+            
+            socket.on('disconnect', function() {
+                console.log('Disconnected from server');
+                isConnected = false;
+                updateConnectionStatus();
+            });
+            
+            socket.on('sensor_update', function(data) {
+                console.log('Sensor update received:', data);
+                updateSensorData(data);
+                updateLastUpdateTime();
+            });
+            
+            socket.on('sensor_stats', function(data) {
+                console.log('Sensor stats received:', data);
+                displaySensorStats(data.sensors || []);
+                populateSensorDropdown(data.sensors || []);
+            });
+            
+            socket.on('sensor_history', function(data) {
+                console.log('Sensor history received:', data);
+                updateChart(data.readings || []);
+            });
         }
-        
-        function displaySensorStats(stats) {
-            sensorStats = {};
-            const grid = document.getElementById('statsGrid');
+
+        function updateConnectionStatus() {
+            const statusIndicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
             
-            if (stats.length === 0) {
-                grid.innerHTML = '<div class="loading">No sensor data available</div>';
-                return;
+            if (isConnected) {
+                statusIndicator.classList.add('connected');
+                statusText.textContent = 'Connected';
+            } else {
+                statusIndicator.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
             }
+        }
+
+        function updateLastUpdateTime() {
+            const timestamp = document.getElementById('lastUpdate');
+            timestamp.textContent = new Date().toLocaleTimeString();
+        }
+
+        function requestAllStats() {
+            if (socket && isConnected) {
+                socket.emit('request_all_stats');
+            }
+        }
+
+        function updateSensorData(data) {
+            sensors[data.sensor_id] = data;
             
-            grid.innerHTML = '';
-            const sensorSelect = document.getElementById('sensorSelect');
-            sensorSelect.innerHTML = '<option value="">Select a sensor...</option>';
+            // Update sensor count
+            const sensorCount = document.getElementById('sensorCount');
+            sensorCount.textContent = `${Object.keys(sensors).length} Sensors`;
             
-            stats.forEach(stat => {
-                sensorStats[stat.sensor_id] = stat;
-                
-                const card = document.createElement('div');
-                card.className = 'stat-card';
-                card.innerHTML = `
-                    <h3>${stat.sensor_id}</h3>
-                    <div class="stat-value">
-                        ${stat.avg_value.toFixed(1)}
-                        <span class="stat-unit">avg</span>
-                    </div>
-                    <div class="stat-meta">
-                        Min: ${stat.min_value} | Max: ${stat.max_value}<br>
-                        Readings: ${stat.count} | Last: ${new Date(stat.last_reading).toLocaleTimeString()}
+            // Re-request stats to get updated statistics
+            setTimeout(() => requestAllStats(), 1000);
+        }
+
+        function displaySensorStats(statsArray) {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            if (!statsArray || statsArray.length === 0) {
+                statsGrid.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>No sensor data available</p>
                     </div>
                 `;
-                grid.appendChild(card);
-                
-                const option = document.createElement('option');
-                option.value = stat.sensor_id;
-                option.textContent = stat.sensor_id;
-                sensorSelect.appendChild(option);
-            });
-        }
-        
-        function updateSensorDisplay(data) {
-            if (sensorStats[data.sensor_id]) {
-                const stat = sensorStats[data.sensor_id];
-                stat.last_reading = data.timestamp;
-                stat.count += 1;
-                
-                if (data.value < stat.min_value) stat.min_value = data.value;
-                if (data.value > stat.max_value) stat.max_value = data.value;
-                
-                stat.avg_value = ((stat.avg_value * (stat.count - 1)) + data.value) / stat.count;
-                
-                displaySensorStats(Object.values(sensorStats));
-            }
-        }
-        
-        function loadChart() {
-            const sensorId = document.getElementById('sensorSelect').value;
-            const hours = parseInt(document.getElementById('timeRange').value);
-            
-            if (!sensorId) {
-                alert('Please select a sensor');
                 return;
             }
             
-            socket.emit('request_sensor_data', {
-                sensor_id: sensorId,
-                hours: hours
-            });
+            statsGrid.innerHTML = statsArray.map(stats => {
+                const sensorTypeIcon = getSensorIcon(stats.sensor_id);
+                const timeAgo = getTimeAgo(new Date(stats.last_reading));
+                
+                return `
+                    <div class="stat-card fade-in">
+                        <div class="stat-icon">
+                            <i class="${sensorTypeIcon}"></i>
+                        </div>
+                        <div class="stat-title">${stats.sensor_id.replace('_', ' ').toUpperCase()}</div>
+                        <div class="stat-value">
+                            ${stats.avg_value}
+                            <span class="stat-unit">${getSensorUnit(stats.sensor_id)}</span>
+                        </div>
+                        <div class="stat-range">
+                            <div class="stat-range-item">
+                                <div class="stat-range-value">${stats.min_value}</div>
+                                <div class="stat-range-label">Min</div>
+                            </div>
+                            <div class="stat-range-item">
+                                <div class="stat-range-value">${stats.max_value}</div>
+                                <div class="stat-range-label">Max</div>
+                            </div>
+                            <div class="stat-range-item">
+                                <div class="stat-range-value">${stats.count}</div>
+                                <div class="stat-range-label">Readings</div>
+                            </div>
+                        </div>
+                        <div class="stat-meta">
+                            <div class="stat-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${getSensorLocation(stats.sensor_id)}
+                            </div>
+                            <div class="stat-timestamp">${timeAgo}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        
-        function displayChart(sensorId, readings) {
-            const ctx = document.getElementById('sensorChart').getContext('2d');
+
+        function getSensorIcon(sensorId) {
+            if (sensorId.includes('temp')) return 'fas fa-thermometer-half';
+            if (sensorId.includes('hum')) return 'fas fa-tint';
+            if (sensorId.includes('pressure')) return 'fas fa-gauge';
+            if (sensorId.includes('light')) return 'fas fa-sun';
+            return 'fas fa-microchip';
+        }
+
+        function getSensorUnit(sensorId) {
+            if (sensorId.includes('temp')) return '°C';
+            if (sensorId.includes('hum')) return '%';
+            if (sensorId.includes('pressure')) return 'hPa';
+            if (sensorId.includes('light')) return 'lux';
+            return '';
+        }
+
+        function getSensorLocation(sensorId) {
+            if (sensorId.includes('01')) return 'Living Room';
+            if (sensorId.includes('02')) return 'Bedroom';
+            if (sensorId.includes('03')) return 'Kitchen';
+            if (sensorId.includes('04')) return 'Office';
+            return 'Unknown';
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
             
-            if (currentChart) {
-                currentChart.destroy();
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours}h ago`;
+            
+            const diffDays = Math.floor(diffHours / 24);
+            return `${diffDays}d ago`;
+        }
+
+        function populateSensorDropdown(statsArray) {
+            const select = document.getElementById('sensorSelect');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">Select a sensor...</option>';
+            
+            statsArray.forEach(stats => {
+                const option = document.createElement('option');
+                option.value = stats.sensor_id;
+                option.textContent = `${stats.sensor_id.replace('_', ' ').toUpperCase()} (${getSensorLocation(stats.sensor_id)})`;
+                select.appendChild(option);
+            });
+            
+            select.value = currentValue;
+        }
+
+        function loadChart() {
+            const sensorId = document.getElementById('sensorSelect').value;
+            const hours = document.getElementById('timeRange').value;
+            
+            if (!sensorId) {
+                alert('Please select a sensor first');
+                return;
             }
             
-            const labels = readings.map(r => new Date(r.timestamp).toLocaleTimeString());
-            const values = readings.map(r => r.value);
+            if (socket && isConnected) {
+                socket.emit('request_sensor_data', {
+                    sensor_id: sensorId,
+                    hours: parseInt(hours)
+                });
+            }
+        }
+
+        function updateChart(readings) {
+            const ctx = document.getElementById('sensorChart').getContext('2d');
             
-            currentChart = new Chart(ctx, {
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const data = {
+                labels: readings.map(r => new Date(r.timestamp)),
+                datasets: [{
+                    label: 'Sensor Reading',
+                    data: readings.map(r => r.value),
+                    borderColor: 'rgb(37, 99, 235)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgb(37, 99, 235)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            };
+            
+            chart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: sensorId,
-                        data: values,
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
+                data: data,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    },
                     plugins: {
                         legend: {
                             display: false
                         }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    hour: 'HH:mm',
+                                    day: 'MMM DD'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 8
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
         }
-        
-        function addPointToChart(data) {
-            if (currentChart) {
-                currentChart.data.labels.push(new Date(data.timestamp).toLocaleTimeString());
-                currentChart.data.datasets[0].data.push(data.value);
-                
-                if (currentChart.data.labels.length > 50) {
-                    currentChart.data.labels.shift();
-                    currentChart.data.datasets[0].data.shift();
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            
+            // Auto-refresh stats every 30 seconds
+            setInterval(() => {
+                if (isConnected) {
+                    requestAllStats();
                 }
-                
-                currentChart.update();
-            }
-        }
-        
-        setInterval(loadSensorStats, 30000);
+            }, 30000);
+        });
     </script>
 </body>
 </html>
