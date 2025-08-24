@@ -23,15 +23,32 @@ def start_mqtt_client():
 
 def main():
     """Main application entry point."""
-    # Start required services
-    logger.info("Starting required services...")
-    import subprocess
-    import sys
-    subprocess.run([sys.executable, 'start_services.py'])
+    # Start MQTT broker
+    logger.info("Starting MQTT broker...")
+    try:
+        result = subprocess.run(['pgrep', 'mosquitto'], capture_output=True)
+        if result.returncode != 0:
+            subprocess.Popen(['mosquitto', '-d', '-p', '1883'])
+            import time
+            time.sleep(2)
+            logger.info("MQTT broker started")
+    except Exception as e:
+        logger.warning(f"Could not start MQTT broker: {e}")
     
-    # Give services time to start
-    import time
-    time.sleep(3)
+    # Start sensor simulator
+    def start_simulator():
+        import time
+        time.sleep(3)  # Give MQTT broker time to start
+        try:
+            from sensor_simulator import SensorSimulator
+            simulator = SensorSimulator()
+            simulator.start_simulation()
+        except Exception as e:
+            logger.error(f"Error starting sensor simulator: {e}")
+    
+    simulator_thread = threading.Thread(target=start_simulator, daemon=True)
+    simulator_thread.start()
+    logger.info("Sensor simulator started")
     
     app = create_app()
     
