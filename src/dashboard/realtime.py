@@ -52,8 +52,8 @@ def handle_stats_request():
         from .tasks import get_all_sensor_stats
         stats = get_all_sensor_stats()
         
-        emit('sensor_stats', {'stats': stats})
-        logger.debug("Sent sensor statistics to client")
+        emit('sensor_stats', {'sensors': stats})  # Changed key to match frontend expectation
+        logger.debug(f"Sent sensor statistics to client: {len(stats)} sensors")
         
     except Exception as e:
         logger.error(f"Error handling stats request: {e}")

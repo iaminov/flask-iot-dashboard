@@ -23,6 +23,16 @@ def start_mqtt_client():
 
 def main():
     """Main application entry point."""
+    # Start required services
+    logger.info("Starting required services...")
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, 'start_services.py'])
+    
+    # Give services time to start
+    import time
+    time.sleep(3)
+    
     app = create_app()
     
     mqtt_thread = threading.Thread(target=start_mqtt_client, daemon=True)

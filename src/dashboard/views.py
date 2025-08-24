@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, jsonify, request
 from .tasks import get_all_sensor_stats, get_sensor_readings
 import logging
